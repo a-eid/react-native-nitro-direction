@@ -1,13 +1,16 @@
 {
-  "name": "react-native-nitro-direction-root",
-  "private": true,
-  "workspaces": [
-    "packages/*",
-    "example"
-  ],
-  "scripts": {
-    "specs": "bun --cwd packages/react-native-nitro-direction run specs",
-    "example": "bun --cwd example",
-    "publish": "cd packages/react-native-nitro-direction && npm publish --access public"
-  }
+	"name": "react-native-nitro-direction-root",
+	"private": true,
+	"workspaces": [
+		"packages/*",
+		"example"
+	],
+	"scripts": {
+		"specs": "bun --cwd packages/react-native-nitro-direction run specs",
+		"example": "bun --cwd example",
+		"publish": "cd packages/react-native-nitro-direction && npm publish --access public"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.16"
+	}
 }
