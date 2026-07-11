@@ -6,7 +6,7 @@ class HybridLayoutDirection: HybridLayoutDirectionSpec {
   var onDirectionChanged: ((_ isRTL: Bool) -> Void)?
 
   var isRTL: Bool {
-    return RCTI18nUtil.sharedInstance().isRTL()
+    return RCTI18nUtil.sharedInstance()?.isRTL() ?? false
   }
 
   var direction: Direction {
@@ -14,7 +14,11 @@ class HybridLayoutDirection: HybridLayoutDirectionSpec {
   }
 
   func setRTL(isRTL: Bool) throws -> Promise<Bool> {
-    let i18n = RCTI18nUtil.sharedInstance()
+    guard let i18n = RCTI18nUtil.sharedInstance() else {
+      let promise = Promise<Bool>()
+      promise.resolve(withResult: isRTL)
+      return promise
+    }
     i18n.allowRTL(true)
     i18n.forceRTL(isRTL)
     i18n.swapLeftAndRightInRTL(true)
