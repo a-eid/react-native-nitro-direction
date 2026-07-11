@@ -1,268 +1,55 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native'
+import { useRouter } from 'expo-router'
+import { Pressable, StyleSheet, Text } from 'react-native'
+import { FlipButton } from '../components/FlipButton'
+import { COLORS } from '../components/COLORS'
+import { ScreenBody, Section } from '../components/ScreenBody'
 
-import {
-  setDirection,
-  getDirection,
-  onDirectionChanged,
-} from 'react-native-nitro-direction'
+const demos = [
+  { label: 'Native Tab Bar', description: 'iOS/Android native tabs (3 tabs)', route: '/(native-tabs)' as const },
+  { label: 'JS Tab Bar', description: 'React Navigation bottom tabs (3 tabs)', route: '/(js-tabs)' as const },
+  { label: 'Drawer Navigator', description: 'Nested drawer — swipe from edge', route: '/(drawer)/home' as const },
+  { label: 'Messages', description: 'Pushed — headerLargeTitleEnabled', route: '/messages' as const },
+  { label: 'Files', description: 'Pushed — headerLargeTitleEnabled', route: '/files' as const },
+  { label: 'Contacts', description: 'Pushed — headerLargeTitleEnabled', route: '/contacts' as const },
+  { label: 'Standalone Modal', description: 'Modal presentation', route: '/standalone-modal' as const },
+]
 
-type Row = { id: string; title: string }
-
-const ROWS: Row[] = Array.from({ length: 40 }, (_, i) => ({
-  id: `${i}`,
-  title: `Item ${i + 1}`,
-}))
-
-const HORIZONTAL: Row[] = Array.from({ length: 12 }, (_, i) => ({
-  id: `h${i}`,
-  title: `Card ${i + 1}`,
-}))
-
-export default function App() {
-  const [isRTL, setIsRTL] = useState(getDirection() === 'rtl')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [text, setText] = useState('Type here — cursor should stay sane on flip')
-  const [invertedList, setInvertedList] = useState(false)
-  const scrollRef = useRef<ScrollView>(null)
-  const [offset, setOffset] = useState(0)
-
-  useEffect(() => {
-    return onDirectionChanged((direction) => {
-      setIsRTL(direction === 'rtl')
-    })
-  }, [])
-
-  const flip = useCallback(async () => {
-    const next = getDirection() === 'rtl' ? 'ltr' : 'rtl'
-    await setDirection(next)
-    setIsRTL(next === 'rtl')
-  }, [])
+export default function HubScreen() {
+  const router = useRouter()
 
   return (
-    <View style={styles.root}>
-      {/* Header + the one big button */}
-      <View style={styles.header}>
-        <Text style={styles.h1}>react-native-nitro-direction</Text>
-        <Text style={styles.readout}>
-          direction: <Text style={styles.bold}>{isRTL ? 'RTL →' : '← LTR'}</Text>
-        </Text>
-        <Pressable style={styles.flipBtn} onPress={flip}>
-          <Text style={styles.flipBtnText}>Flip to {isRTL ? 'LTR' : 'RTL'}</Text>
-        </Pressable>
-      </View>
+    <ScreenBody>
+      <FlipButton />
 
-      <ScrollView
-        ref={scrollRef}
-        onScroll={(e) => setOffset(e.nativeEvent.contentOffset.y)}
-        scrollEventThrottle={160}
-        contentContainerStyle={styles.body}
-      >
-        {/* 1. TextInput — cursor, selection, placeholder alignment */}
-        <Section title="1 · TextInput">
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            style={styles.input}
-            placeholder="Placeholder should flip side"
-            multiline
-          />
-          <Text style={styles.muted}>scroll offset preserved across flip: {Math.round(offset)}</Text>
-        </Section>
-
-        {/* 2. FlatList — horizontal */}
-        <Section title="2 · FlatList (horizontal)">
-          <FlatList
-            horizontal
-            data={HORIZONTAL}
-            keyExtractor={(item) => item.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 10 }}
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <Text style={styles.cardText}>{item.title}</Text>
-              </View>
-            )}
-          />
-        </Section>
-
-        {/* 3. FlatList — inverted toggle + sticky headers */}
-        <Section title="3 · FlatList (inverted + sticky header)">
-          <View style={styles.row}>
-            <Text style={styles.label}>inverted</Text>
-            <Switch value={invertedList} onValueChange={setInvertedList} />
-          </View>
-          <View style={styles.listWrap}>
-            <FlatList
-              inverted={invertedList}
-              data={ROWS}
-              keyExtractor={(item) => item.id}
-              stickyHeaderIndices={[0]}
-              style={styles.list}
-              renderItem={({ item }) => (
-                <View style={[styles.rowItem, item.title.endsWith('0') && styles.sticky]}>
-                  <Text style={styles.rowText}>{item.title}</Text>
-                  <Text style={styles.chev}>{isRTL ? '‹' : '›'}</Text>
-                </View>
-              )}
-            />
-          </View>
-        </Section>
-
-        {/* 4. Modal — flip while open, and open after flip */}
-        <Section title="4 · Modal">
-          <Pressable style={styles.btn} onPress={() => setModalOpen(true)}>
-            <Text style={styles.btnText}>Open modal</Text>
+      <Section title="Navigation Demos">
+        {demos.map((demo) => (
+          <Pressable
+            key={demo.label}
+            style={styles.card}
+            onPress={() => router.push(demo.route as any)}
+          >
+            <Text style={styles.cardTitle}>{demo.label}</Text>
+            <Text style={styles.cardDesc}>{demo.description}</Text>
+            <Text style={styles.chev}>›</Text>
           </Pressable>
-          <Text style={styles.muted}>Open it, then hit Flip — modal should re-mirror in place.</Text>
-        </Section>
-
-        {/* 5. Direct direction set */}
-        <Section title="5 · setDirection">
-          <View style={styles.row}>
-            <Pressable
-              style={styles.btn}
-              onPress={async () => {
-                await setDirection('rtl')
-                setIsRTL(true)
-              }}>
-              <Text style={styles.btnText}>RTL</Text>
-            </Pressable>
-            <Pressable
-              style={styles.btn}
-              onPress={async () => {
-                await setDirection('ltr')
-                setIsRTL(false)
-              }}>
-              <Text style={styles.btnText}>LTR</Text>
-            </Pressable>
-          </View>
-        </Section>
-
-        <Text style={styles.muted}>
-          This screen is a stability torture-test: flip repeatedly, in every
-          state (modal open, keyboard up, mid-scroll). Nothing should restart,
-          remount, or lose state.
-        </Text>
-      </ScrollView>
-
-      {/* The modal that must survive a flip while open */}
-      <Modal visible={modalOpen} animationType="slide" transparent>
-        <View style={styles.modalWrap}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Modal open during flip</Text>
-            <Text style={styles.muted}>
-              Press Flip on the header button without dismissing — the modal
-              chrome and its content should mirror without closing.
-            </Text>
-            <Pressable style={styles.btn} onPress={() => setModalOpen(false)}>
-              <Text style={styles.btnText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-    </View>
+        ))}
+      </Section>
+    </ScreenBody>
   )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
-  )
-}
-
-const COLORS = {
-  bg: '#0b0d10',
-  card: '#161a1f',
-  border: '#262c34',
-  text: '#e8eaed',
-  muted: '#8b939e',
-  tint: '#5b8cff',
-  onTint: '#ffffff',
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg },
-  header: { padding: 20, gap: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  h1: { fontSize: 18, fontWeight: '700', color: COLORS.text, textAlign: 'left' },
-  readout: { fontSize: 14, color: COLORS.muted, textAlign: 'left' },
-  bold: { color: COLORS.tint, fontWeight: '700' },
-  flipBtn: {
-    backgroundColor: COLORS.tint,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  flipBtnText: { color: COLORS.onTint, fontWeight: '700', fontSize: 15 },
-  body: { padding: 20, gap: 24, paddingBottom: 80 },
-  section: { gap: 10 },
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: COLORS.muted, textTransform: 'uppercase', letterSpacing: 0.6, textAlign: 'left' },
-  input: {
-    backgroundColor: COLORS.card,
-    color: COLORS.text,
-    borderRadius: 10,
-    padding: 12,
-    minHeight: 60,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    textAlign: 'left',
-  },
   card: {
     backgroundColor: COLORS.card,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  cardText: { color: COLORS.text, fontWeight: '600' },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  label: { color: COLORS.text, fontSize: 15, textAlign: 'left' },
-  listWrap: { height: 260, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, overflow: 'hidden' },
-  list: { backgroundColor: COLORS.card },
-  rowItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
-  },
-  sticky: { backgroundColor: COLORS.tint },
-  rowText: { color: COLORS.text, fontSize: 15, textAlign: 'left' },
-  chev: { color: COLORS.muted, fontSize: 18 },
-  btn: {
-    backgroundColor: COLORS.card,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    flex: 1,
-    alignItems: 'center',
-  },
-  btnText: { color: COLORS.text, fontWeight: '600' },
-  muted: { color: COLORS.muted, fontSize: 13, lineHeight: 18, textAlign: 'left' },
-  modalWrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalCard: {
-    backgroundColor: COLORS.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
     gap: 12,
   },
-  modalTitle: { color: COLORS.text, fontSize: 17, fontWeight: '700', textAlign: 'left' },
+  cardTitle: { color: COLORS.text, fontWeight: '600', fontSize: 15, flex: 1, textAlign: 'left' },
+  cardDesc: { color: COLORS.muted, fontSize: 12, flex: 2, textAlign: 'left' },
+  chev: { color: COLORS.muted, fontSize: 20 },
 })
