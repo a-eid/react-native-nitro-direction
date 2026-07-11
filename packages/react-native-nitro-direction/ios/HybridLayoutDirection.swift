@@ -1,12 +1,16 @@
 import NitroModules
-import React
 import UIKit
+
+// NOTE: Do NOT `import React` here.
+// React's C++ headers break Swift-C++ interop on the iOS 26 SDK's libc++
+// (`std::__construct_at` no-matching-function). All React-Native-touching
+// code lives in LayoutDirectionBridge.mm (ObjC++) behind a pure-ObjC header.
 
 class HybridLayoutDirection: HybridLayoutDirectionSpec {
   var onDirectionChanged: ((_ isRTL: Bool) -> Void)?
 
   var isRTL: Bool {
-    return RCTI18nUtil.sharedInstance()?.isRTL() ?? false
+    return LayoutDirectionIsRTL()
   }
 
   var direction: Direction {
@@ -14,14 +18,9 @@ class HybridLayoutDirection: HybridLayoutDirectionSpec {
   }
 
   func setRTL(isRTL: Bool) throws -> Promise<Bool> {
-    guard let i18n = RCTI18nUtil.sharedInstance() else {
-      let promise = Promise<Bool>()
-      promise.resolve(withResult: isRTL)
-      return promise
-    }
-    i18n.allowRTL(true)
-    i18n.forceRTL(isRTL)
-    i18n.swapLeftAndRightInRTL(true)
+    // Flip RN's own direction flags synchronously so `isRTL` is coherent
+    // immediately after the call, then dispatch the view work to the main thread.
+    LayoutDirectionApplyRTL(isRTL)
 
     let promise = Promise<Bool>()
 
@@ -107,33 +106,9 @@ class HybridLayoutDirection: HybridLayoutDirectionSpec {
 
   private func forceFabricRelayout(in view: UIView,
                                    attribute: UISemanticContentAttribute) {
-    if let surfaceView = view as? RCTSurfaceView,
-       let surface = surfaceView.surface {
-      // RCTFabricSurface implements setMinimumSize:maximumSize: on the protocol.
-      // Use a bridging cast through AnyObject to access it without subclass casts.
-      if let surfaceObj = surface as AnyObject?,
-         surfaceObj.responds(to: NSSelectorFromString("minimumSize")) {
-        let minSize = (surfaceObj.value(forKey: "minimumSize") as? NSValue)?.cgSizeValue ?? .zero
-        let maxSize = (surfaceObj.value(forKey: "maximumSize") as? NSValue)?.cgSizeValue ?? .zero
-
-        if maxSize.width > 0.0 && maxSize.height > 0.0 {
-          surface.setMinimumSize(CGSize(width: minSize.width + 1.0, height: minSize.height),
-                                 maximumSize: CGSize(width: maxSize.width + 1.0, height: maxSize.height))
-          surface.setMinimumSize(minSize, maximumSize: maxSize)
-        } else {
-          // Surface exists but no valid size constraints yet. Use setNeedsLayout
-          // to trigger a relayout on the container instead.
-          surfaceView.setNeedsLayout()
-          surfaceView.layoutIfNeeded()
-        }
-      } else {
-        print("[LayoutDirection] WARNING: RCTFabricSurface does not respond to " +
-              "`minimumSize` — React Native may have changed its surface API. " +
-              "The RN content will not relayout until an app restart. " +
-              "Please file an issue at https://github.com/a-eid/react-native-nitro-direction/issues " +
-              "and include your React Native version.")
-      }
-    }
+    // Delegated to the ObjC++ bridge — busts Yoga's size-keyed layout cache on
+    // every Fabric surface. Keeps React out of the Swift module.
+    LayoutDirectionRelayoutSurfaceIfPresent(view)
 
     if view is UITabBar || view is UINavigationBar {
       view.semanticContentAttribute = attribute
