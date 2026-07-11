@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-direction",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Flip a React Native app between LTR and RTL at runtime — no restart, no reload, no remount. Native iOS + Android, built on Nitro Modules.",
   "main": "lib/index",
   "module": "lib/index",
