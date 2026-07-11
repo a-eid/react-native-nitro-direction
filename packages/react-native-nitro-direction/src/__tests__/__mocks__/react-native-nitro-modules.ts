@@ -1,8 +1,8 @@
 /**
  * Minimal `react-native-nitro-modules` mock for unit tests. The real singleton
  * calls native code; here `NitroModules.createHybridObject` returns a stub that
- * records calls and exposes a mutable `isRTL`, so the JS helpers (`setRTL`,
- * `toggleDirection`) can be exercised end-to-end in
+ * records calls and exposes a mutable `isRTL`, so the JS helpers (`setDirection`,
+ * `getDirection`, `onDirectionChanged`) can be exercised end-to-end in
  * Node without any native runtime.
  */
 

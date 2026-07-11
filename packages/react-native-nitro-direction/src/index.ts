@@ -2,12 +2,18 @@ import { I18nManager } from 'react-native'
 
 import { layoutDirection } from './specs/LayoutDirection.nitro'
 
-export { layoutDirection }
-export type { LayoutDirection, Direction } from './specs/LayoutDirection.nitro'
+/**
+ * Get the current layout direction.
+ *
+ * @returns `'ltr'` or `'rtl'`.
+ */
+export function getDirection(): 'ltr' | 'rtl' {
+  return layoutDirection.direction
+}
 
 /**
- * Flip the whole app's layout direction (LTR ⇄ RTL) at runtime — natively,
- * with no restart, reload or remount. One call re-mirrors:
+ * Set the whole app's layout direction at runtime — natively, with no restart,
+ * reload or remount. One call re-mirrors:
  *
  * - the entire React Native content (text alignment, `flex` start/end,
  *   left/right style swapping), and
@@ -18,25 +24,35 @@ export type { LayoutDirection, Direction } from './specs/LayoutDirection.nitro'
  * It also keeps the JS-side `I18nManager.isRTL` constant in sync, so the rest
  * of your app (and libraries that read it) see the new direction immediately.
  *
- * @param isRTL `true` for right-to-left, `false` for left-to-right.
- * @returns a Promise resolving to the direction that was applied, once the
- *   native flip has landed.
+ * @param direction `'ltr'` or `'rtl'`.
+ * @returns a Promise resolving to the applied direction once the native flip
+ *   has landed.
  */
-export async function setRTL(isRTL: boolean): Promise<boolean> {
-  // Keep the JS-side constant coherent even before/without the native flip.
+export async function setDirection(direction: 'ltr' | 'rtl'): Promise<'ltr' | 'rtl'> {
+  const isRTL = direction === 'rtl'
   if (I18nManager.isRTL !== isRTL) {
     I18nManager.allowRTL(true)
     I18nManager.forceRTL(isRTL)
   }
-  return layoutDirection.setRTL(isRTL)
+  await layoutDirection.setRTL(isRTL)
+  return direction
 }
 
 /**
- * Convenience: flip to the opposite of the current direction.
+ * Subscribe to native direction changes. Fires **after** the visual flip has
+ * landed on the main/UI thread.
+ *
+ * @param callback Called with the new direction (`'ltr'` or `'rtl'`) whenever
+ *   the layout direction changes.
+ * @returns A cleanup function that removes the listener.
  */
-export async function toggleDirection(): Promise<boolean> {
-  const next = !layoutDirection.isRTL
-  return setRTL(next)
+export function onDirectionChanged(
+  callback: (direction: 'ltr' | 'rtl') => void,
+): () => void {
+  layoutDirection.onDirectionChanged = (isRTL: boolean) => {
+    callback(isRTL ? 'rtl' : 'ltr')
+  }
+  return () => {
+    layoutDirection.onDirectionChanged = undefined
+  }
 }
-
-

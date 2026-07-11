@@ -12,9 +12,9 @@ import {
 } from 'react-native'
 
 import {
-  setRTL,
-  toggleDirection,
-  layoutDirection,
+  setDirection,
+  getDirection,
+  onDirectionChanged,
 } from 'react-native-nitro-direction'
 
 type Row = { id: string; title: string }
@@ -30,7 +30,7 @@ const HORIZONTAL: Row[] = Array.from({ length: 12 }, (_, i) => ({
 }))
 
 export default function App() {
-  const [isRTL, setIsRTL] = useState(layoutDirection.isRTL)
+  const [isRTL, setIsRTL] = useState(getDirection() === 'rtl')
   const [modalOpen, setModalOpen] = useState(false)
   const [text, setText] = useState('Type here — cursor should stay sane on flip')
   const [switchOn, setSwitchOn] = useState(true)
@@ -38,18 +38,16 @@ export default function App() {
   const scrollRef = useRef<ScrollView>(null)
   const [offset, setOffset] = useState(0)
 
-  // Subscribe to native direction changes (so flipping from outside JS — e.g.
-  // a future device-language-change hook — keeps the readout honest).
   useEffect(() => {
-    layoutDirection.onDirectionChanged = (rtl: boolean) => setIsRTL(rtl)
-    return () => {
-      layoutDirection.onDirectionChanged = undefined
-    }
+    return onDirectionChanged((direction) => {
+      setIsRTL(direction === 'rtl')
+    })
   }, [])
 
   const flip = useCallback(async () => {
-    await toggleDirection()
-    setIsRTL(layoutDirection.isRTL)
+    const next = getDirection() === 'rtl' ? 'ltr' : 'rtl'
+    await setDirection(next)
+    setIsRTL(next === 'rtl')
   }, [])
 
   return (
@@ -131,21 +129,21 @@ export default function App() {
         </Section>
 
         {/* 5. Direct direction set */}
-        <Section title="5 · setRTL">
+        <Section title="5 · setDirection">
           <View style={styles.row}>
             <Pressable
               style={styles.btn}
               onPress={async () => {
-                await setRTL(true)
-                setIsRTL(layoutDirection.isRTL)
+                await setDirection('rtl')
+                setIsRTL(true)
               }}>
               <Text style={styles.btnText}>RTL</Text>
             </Pressable>
             <Pressable
               style={styles.btn}
               onPress={async () => {
-                await setRTL(false)
-                setIsRTL(layoutDirection.isRTL)
+                await setDirection('ltr')
+                setIsRTL(false)
               }}>
               <Text style={styles.btnText}>LTR</Text>
             </Pressable>

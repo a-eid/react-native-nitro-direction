@@ -6,23 +6,21 @@
 Flip your React Native app between **LTR and RTL at runtime** — no restart, no
 bundle reload, no remount. One call re-mirrors the entire UI *and* the native
 chrome (navigation header, tab bar, and on iOS the edge swipe-back gesture) in
-place, keeping the user's navigation stack, scroll position, and form state
-intact.
+place, keeping navigation state, scroll position, and form state intact.
 
-Built on [Nitro Modules](https://github.com/mrousavy/nitro). A singleton
-HybridObject owns the direction — native is the source of truth, JS consumes it.
-Same pattern as `Appearance`, `Dimensions`, and `Keyboard`.
+Built on [Nitro Modules](https://github.com/mrousavy/nitro). Native owns the
+direction, JS reads and sets it. Same pattern as `Appearance`, `Dimensions`,
+`Keyboard`. Three exports — `setDirection`, `getDirection`, `onDirectionChanged`.
 
 `I18nManager.forceRTL(true)` needs an app restart on the New Architecture. This
 package doesn't. It triggers React Native's own cold-start re-layout paths on
-every live Fabric surface, then mirrors the native chrome alongside it. No
-`node_modules` patches, no navigator swaps, no root-key remounts.
+every live Fabric surface, then mirrors the native chrome alongside it.
 
 - **Runtime flip** — LTR ⇄ RTL without restarting
 - **JSI-direct** — no bridge serialization, native callbacks
 - **Fabric & bridgeless** — iOS + Android, New Architecture only
 - **Autolinked** — zero `MainApplication` / Podfile edits
-- **Three exports** — `setRTL`, `toggleDirection`, and the `layoutDirection` singleton
+- **Three exports** — `setDirection`, `getDirection`, `onDirectionChanged`
 
 ---
 
@@ -62,37 +60,36 @@ Autolinks on both platforms. No manual native steps.
 ## Quick start
 
 ```ts
-import { setRTL, toggleDirection, layoutDirection } from 'react-native-nitro-direction'
+import {
+  setDirection,
+  getDirection,
+  onDirectionChanged,
+} from 'react-native-nitro-direction'
 
 // Flip the entire app
-await setRTL(true)   // → RTL
-await setRTL(false)  // → LTR
-
-// Flip to the opposite direction
-await toggleDirection()
+await setDirection('rtl')
+await setDirection('ltr')
 
 // Read the current direction
-layoutDirection.isRTL     // boolean
-layoutDirection.direction // 'ltr' | 'rtr'
+getDirection() // 'ltr' | 'rtl'
 
 // Subscribe to native direction changes
-layoutDirection.onDirectionChanged = (isRTL: boolean) => {
+const cleanup = onDirectionChanged((direction) => {
   // fires after the visual flip has landed on the main thread
-}
+})
 ```
 
-`setRTL` also keeps `I18nManager.isRTL` in sync on the JS side, so libraries
-that read it see the new direction immediately.
+`setDirection` also keeps `I18nManager.isRTL` in sync on the JS side.
 
 ---
 
 ## API
 
-| Export | Type | Description |
+| Export | Signature | Description |
 | --- | --- | --- |
-| `setRTL` | `(isRTL: boolean) => Promise<boolean>` | Flip the app's layout direction at runtime. Resolves once the native re-layout has landed. |
-| `toggleDirection` | `() => Promise<boolean>` | Flip to the opposite of the current direction. |
-| `layoutDirection` | `LayoutDirection` (HybridObject) | The native runtime singleton. Properties: `isRTL`, `direction`, `onDirectionChanged`. Methods: `setRTL()`, `toggle()`. |
+| `setDirection` | `(direction: 'ltr' \| 'rtl') => Promise<'ltr' \| 'rtl'>` | Flip the app's layout direction at runtime. Resolves once the native re-layout has landed. |
+| `getDirection` | `() => 'ltr' \| 'rtl'` | Get the current layout direction. |
+| `onDirectionChanged` | `(callback: (dir: 'ltr' \| 'rtl') => void) => () => void` | Subscribe to direction changes. Returns a cleanup function. |
 
 ---
 
@@ -105,21 +102,21 @@ correct on launch:
 
 ```tsx
 // app root, before <NavigationContainer> or the first <Stack>
-const isRTL = getStoredDirection() // your logic — persisted pref, device locale, etc.
-await setRTL(isRTL)
+const direction = getStoredDirection() // your logic — persisted pref, device locale, etc.
+await setDirection(direction)
 ```
 
 ### Language switch — direction first, then strings
 
-Call `setRTL` **before** `i18n.changeLanguage()`. The tree must be RTL when the
-new strings measure; otherwise the text bakes its alignment while the tree is
-still LTR.
+Call `setDirection` **before** `i18n.changeLanguage()`. The tree must be RTL
+when the new strings measure; otherwise the text bakes its alignment while the
+tree is still LTR.
 
 ```ts
 async function switchLanguage(locale: string) {
-  const isRTL = isRTLLanguage(locale) // your logic
-  await setRTL(isRTL)                 // 1. flip direction (native, no restart)
-  await i18n.changeLanguage(locale)   // 2. swap the strings
+  const direction = isRTLLanguage(locale) ? 'rtl' : 'ltr' // your logic
+  await setDirection(direction)        // 1. flip direction (native, no restart)
+  await i18n.changeLanguage(locale)    // 2. swap the strings
 }
 ```
 
@@ -149,7 +146,8 @@ re-reads at runtime. Override it:
 import { LocaleDirContext } from '@react-navigation/native'
 
 function RootLayout() {
-  const direction = useLanguageDirection() // your logic → 'ltr' | 'rtl'
+  // your own state that stays in sync with direction changes
+  const direction = /* ... */
 
   return (
     <LocaleDirContext.Provider value={direction}>
@@ -163,10 +161,9 @@ function RootLayout() {
 
 ```ts
 useEffect(() => {
-  layoutDirection.onDirectionChanged = (isRTL: boolean) => {
+  return onDirectionChanged((direction) => {
     // recompute styles, invalidate caches, drive a styling engine plugin
-  }
-  return () => { layoutDirection.onDirectionChanged = undefined }
+  })
 }, [])
 ```
 
@@ -177,9 +174,10 @@ styling engines can safely recompute.
 
 ## How it works
 
-`setRTL(isRTL)` sets RN's direction flags synchronously (`RCTI18nUtil` on iOS,
-`I18nUtil` SharedPreferences on Android) — so `isRTL` is coherent immediately.
-Then it dispatches the view work to the main/UI thread in a single pass:
+`setDirection(direction)` sets RN's direction flags synchronously
+(`RCTI18nUtil` on iOS, `I18nUtil` SharedPreferences on Android) — so
+`getDirection()` is coherent immediately. Then it dispatches the view work to
+the main/UI thread in a single pass:
 
 **iOS**
 1. Post `UIContentSizeCategoryDidChangeNotification` — every `RCTFabricSurface`
@@ -217,8 +215,7 @@ failure loud, the iOS path checks that `RCTFabricSurface` still responds to
 `minimumSize`/`maximumSize` (via KVC) and logs a warning with an issue URL if it
 doesn't.
 
-**When upgrading React Native:** run the example app and flip every screen. If
-anything regresses, that's your signal.
+**When upgrading React Native:** run the example app and flip every screen.
 
 ---
 
@@ -227,9 +224,9 @@ anything regresses, that's your signal.
 | Symptom | Likely cause |
 | --- | --- |
 | Nothing happens | Native module not in the binary — rebuild (`pod install` + run). Confirm `react-native-nitro-modules` is installed. |
-| Only flips after restart | You're on New Architecture? Confirm `newArchEnabled`. Are you `await`-ing `setRTL()`? |
+| Only flips after restart | You're on New Architecture? Confirm `newArchEnabled`. Are you `await`-ing `setDirection()`? |
 | Text doesn't right-align | Add `textAlign: 'left'` to that style. Unset alignment never flips. |
-| Text alignment is stale after language switch | Call `setRTL` **before** `i18n.changeLanguage`. |
+| Text alignment is stale after language switch | Call `setDirection` **before** `i18n.changeLanguage`. |
 | Push animation / swipe-back stuck in old direction | Override `LocaleDirContext` (see React Navigation section). |
 | `WARNING: RCTFabricSurface does not respond to minimumSize` | RN's surface API changed — the content won't re-layout until restart. [File an issue](https://github.com/a-eid/react-native-nitro-direction/issues) with your RN version. |
 

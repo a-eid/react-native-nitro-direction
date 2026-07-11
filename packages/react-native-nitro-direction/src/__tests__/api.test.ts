@@ -1,74 +1,89 @@
-import {
-  setRTL,
-  toggleDirection,
-} from '../index'
-// Import the mock helpers from the bare specifiers — jest's moduleNameMapper
-// resolves these to our stubs (see jest.config.js).
+import { setDirection, getDirection, onDirectionChanged } from '../index'
 import {
   __reset as resetNitro,
   __lastSetRTL,
-  __didToggle,
-  layoutDirection,
 } from 'react-native-nitro-modules'
 import { I18nManager, __resetI18n } from 'react-native'
 
-describe('setRTL (JS wrapper)', () => {
+describe('setDirection', () => {
   beforeEach(() => {
     resetNitro()
     __resetI18n()
   })
 
-  it('calls the native setRTL with the given value', async () => {
-    await setRTL(true)
+  it("calls the native setRTL with true for 'rtl'", async () => {
+    await setDirection('rtl')
     expect(__lastSetRTL()).toBe(true)
+    expect(I18nManager.isRTL).toBe(true)
+  })
 
-    await setRTL(false)
+  it("calls the native setRTL with false for 'ltr'", async () => {
+    await setDirection('ltr')
     expect(__lastSetRTL()).toBe(false)
+    expect(I18nManager.isRTL).toBe(false)
   })
 
   it('resolves to the applied direction', async () => {
-    await expect(setRTL(true)).resolves.toBe(true)
-    await expect(setRTL(false)).resolves.toBe(false)
+    await expect(setDirection('rtl')).resolves.toBe('rtl')
+    await expect(setDirection('ltr')).resolves.toBe('ltr')
   })
 
   it('keeps JS-side I18nManager.isRTL in sync', async () => {
-    await setRTL(true)
+    expect(I18nManager.isRTL).toBe(false)
+
+    await setDirection('rtl')
     expect(I18nManager.isRTL).toBe(true)
 
-    await setRTL(false)
+    await setDirection('ltr')
     expect(I18nManager.isRTL).toBe(false)
   })
 })
 
-describe('toggleDirection', () => {
+describe('getDirection', () => {
   beforeEach(() => {
     resetNitro()
     __resetI18n()
   })
 
-  it('flips to the opposite of the current direction', async () => {
-    expect(layoutDirection.isRTL).toBe(false)
-    await toggleDirection()
-    expect(layoutDirection.isRTL).toBe(true)
-    // The JS wrapper calls setRTL, not the native toggle, so the toggle flag
-    // never trips.
-    expect(__didToggle()).toBe(false)
+  it("returns 'ltr' initially", () => {
+    expect(getDirection()).toBe('ltr')
+  })
+
+  it("returns 'rtl' after setting to rtl", async () => {
+    await setDirection('rtl')
+    expect(getDirection()).toBe('rtl')
+  })
+
+  it("returns 'ltr' after toggling back", async () => {
+    await setDirection('rtl')
+    await setDirection('ltr')
+    expect(getDirection()).toBe('ltr')
   })
 })
 
-describe('onDirectionChanged callback', () => {
+describe('onDirectionChanged', () => {
   beforeEach(() => {
     resetNitro()
     __resetI18n()
   })
 
-  it('fires when the mock flips', async () => {
-    const seen: boolean[] = []
-    layoutDirection.onDirectionChanged = (isRTL: boolean) => seen.push(isRTL)
+  it('fires when the direction changes', async () => {
+    const seen: string[] = []
+    const cleanup = onDirectionChanged((direction) => seen.push(direction))
 
-    await setRTL(true)
-    await setRTL(false)
+    await setDirection('rtl')
+    await setDirection('ltr')
 
-    expect(seen).toEqual([true, false])
+    expect(seen).toEqual(['rtl', 'ltr'])
+    cleanup()
+  })
+
+  it('cleanup stops further events', async () => {
+    const seen: string[] = []
+    const cleanup = onDirectionChanged((direction) => seen.push(direction))
+    cleanup()
+
+    await setDirection('rtl')
+    expect(seen).toEqual([])
   })
 })
