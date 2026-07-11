@@ -26,8 +26,8 @@ This is a native app (Nitro module) — needs a development build, not Expo Go.
 bun install
 
 cd example
-npx expo prebuild
-npx expo run:ios     # or: npx expo run:android
+bun expo prebuild
+bun expo run:ios     # or: bun expo run:android
 ```
 
 > The example resolves the library by workspace symlink

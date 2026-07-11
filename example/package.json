@@ -4,9 +4,9 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "start": "bun expo start",
+    "android": "bun expo run:android",
+    "ios": "bun expo run:ios",
     "pods": "cd ios && pod install && cd .."
   },
   "dependencies": {
