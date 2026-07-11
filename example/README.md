@@ -12,7 +12,7 @@ that has historically broken on an RTL flip:
 2. **FlatList (horizontal)** — start/end anchoring.
 3. **FlatList (inverted + sticky header)** — the three known-bad modes.
 4. **Modal** — flip *while open*, and open *after* a flip.
-5. **applyLocaleDirection** — locale-driven flip smoke test.
+5. **setRTL** — direct direction flip test.
 
 Plus a live `scroll offset` readout to confirm a `ScrollView` keeps its position
 across the flip.

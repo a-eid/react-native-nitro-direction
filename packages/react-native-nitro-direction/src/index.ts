@@ -1,11 +1,9 @@
 import { I18nManager } from 'react-native'
 
 import { layoutDirection } from './specs/LayoutDirection.nitro'
-import { isRTLLocale } from './locales'
 
 export { layoutDirection }
 export type { LayoutDirection, Direction } from './specs/LayoutDirection.nitro'
-export { isRTLLocale } from './locales'
 
 /**
  * Flip the whole app's layout direction (LTR ⇄ RTL) at runtime — natively,
@@ -41,14 +39,4 @@ export async function toggleDirection(): Promise<boolean> {
   return setRTL(next)
 }
 
-/**
- * Convenience wrapper: apply RTL if `locale` is a right-to-left language,
- * LTR otherwise.
- *
- * @example
- *   await applyLocaleDirection('ar') // RTL
- *   await applyLocaleDirection('en') // LTR
- */
-export async function applyLocaleDirection(locale: string): Promise<boolean> {
-  return setRTL(isRTLLocale(locale))
-}
+

@@ -10,9 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial release.
 - `LayoutDirection` Nitro HybridObject (singleton) owning the app's layout
   direction, modelled on `Appearance` / `Dimensions` / `Keyboard`.
-- Public JS API: `setRTL`, `toggleDirection`, `applyLocaleDirection`,
-  `isRTLLocale`, plus the reactive `layoutDirection.isRTL` / `.direction` and an
-  `onDirectionChanged` native→JS callback.
+- Public JS API: `setRTL`, `toggleDirection`, plus the reactive `layoutDirection.isRTL` / `.direction` and an `onDirectionChanged` native→JS callback.
 - Runtime LTR ⇄ RTL flip with **no restart, reload or remount** — rides React
   Native's own cold-start re-layout path on the live Fabric surface (iOS:
   `UIContentSizeCategoryDidChangeNotification` + Yoga cache-bust; Android:
@@ -23,10 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Android manifest merges `android:supportsRtl="true"` into the host app.
 - Loud warning (with issue URL) if the iOS `RCTFabricSurface` surface API ever
   changes under us, so an RN upgrade can't silently break the flip.
-- JS unit tests (57) covering `isRTLLocale`, `setRTL`, `toggleDirection`,
-  `applyLocaleDirection`, and the `onDirectionChanged` callback.
+- JS unit tests covering `setRTL`, `toggleDirection`, and the
+  `onDirectionChanged` callback.
 - Example app: a stability torture-test (TextInput, horizontal/inverted/sticky
-  FlatLists, modal-flipped-while-open, locale-driven flip, scroll-offset
+  FlatLists, modal-flipped-while-open, direct `setRTL` test, scroll-offset
   preservation).
 
 ### Compatibility

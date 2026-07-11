@@ -14,7 +14,6 @@ import {
 import {
   setRTL,
   toggleDirection,
-  isRTLLocale,
   layoutDirection,
 } from 'react-native-nitro-direction'
 
@@ -131,24 +130,24 @@ export default function App() {
           <Text style={styles.muted}>Open it, then hit Flip — modal should re-mirror in place.</Text>
         </Section>
 
-        {/* 5. Locale helper smoke test */}
-        <Section title="5 · applyLocaleDirection">
+        {/* 5. Direct direction set */}
+        <Section title="5 · setRTL">
           <View style={styles.row}>
             <Pressable
               style={styles.btn}
               onPress={async () => {
-                await setRTL(isRTLLocale('ar'))
+                await setRTL(true)
                 setIsRTL(layoutDirection.isRTL)
               }}>
-              <Text style={styles.btnText}>ar → RTL</Text>
+              <Text style={styles.btnText}>RTL</Text>
             </Pressable>
             <Pressable
               style={styles.btn}
               onPress={async () => {
-                await setRTL(isRTLLocale('en'))
+                await setRTL(false)
                 setIsRTL(layoutDirection.isRTL)
               }}>
-              <Text style={styles.btnText}>en → LTR</Text>
+              <Text style={styles.btnText}>LTR</Text>
             </Pressable>
           </View>
         </Section>

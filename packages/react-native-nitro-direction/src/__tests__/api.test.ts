@@ -1,7 +1,6 @@
 import {
   setRTL,
   toggleDirection,
-  applyLocaleDirection,
 } from '../index'
 // Import the mock helpers from the bare specifiers — jest's moduleNameMapper
 // resolves these to our stubs (see jest.config.js).
@@ -54,27 +53,6 @@ describe('toggleDirection', () => {
     // The JS wrapper calls setRTL, not the native toggle, so the toggle flag
     // never trips.
     expect(__didToggle()).toBe(false)
-  })
-})
-
-describe('applyLocaleDirection', () => {
-  beforeEach(() => {
-    resetNitro()
-    __resetI18n()
-  })
-
-  it.each<[string, boolean]>([
-    ['ar', true],
-    ['ar-EG', true],
-    ['he-IL', true],
-    ['fa', true],
-    ['ur-PK', true],
-    ['en', false],
-    ['en-US', false],
-    ['fr-FR', false],
-  ])('locale %s → native setRTL(%s)', async (locale, expected) => {
-    await applyLocaleDirection(locale)
-    expect(__lastSetRTL()).toBe(expected)
   })
 })
 

@@ -88,3 +88,4 @@ build-*
 
 # CommandCode (agent taste/profile)
 .commandcode/
+bun.lock
