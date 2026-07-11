@@ -45,7 +45,7 @@ class HybridLayoutDirection : HybridLayoutDirectionSpec() {
 
     /** The currently requested direction, read straight from the persisted flag. */
     override val isRTL: Boolean
-        get() = I18nUtil.instance.isRTL(NitroModules.applicationContext)
+        get() = NitroModules.applicationContext?.let { I18nUtil.instance.isRTL(it) } ?: false
 
     override val direction: Direction
         get() = if (isRTL) Direction.RTL else Direction.LTR
