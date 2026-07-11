@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "composite": false,
+    "declaration": false,
+    "types": ["jest", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "react-native": ["src/__tests__/__mocks__/react-native.ts"],
+      "react-native-nitro-modules": [
+        "src/__tests__/__mocks__/react-native-nitro-modules.ts"
+      ]
+    }
+  },
+  "include": ["src"]
+}

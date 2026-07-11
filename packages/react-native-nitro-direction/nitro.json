@@ -1,0 +1,24 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": ["layoutdirection"],
+  "ios": {
+    "iosModuleName": "LayoutDirection"
+  },
+  "android": {
+    "androidNamespace": ["layoutdirection"],
+    "androidCxxLibName": "LayoutDirection"
+  },
+  "autolinking": {
+    "LayoutDirection": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridLayoutDirection"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridLayoutDirection"
+      }
+    }
+  },
+  "ignorePaths": ["**/node_modules"]
+}
