@@ -56,7 +56,6 @@ export const __reset = (): void => {
   _isRTL = false
   _lastSetRTL = null
   _lastToggle = false
-  _onDirectionChanged = undefined
 }
 
 // Re-export the stub as `layoutDirection` for tests that subscribe to the

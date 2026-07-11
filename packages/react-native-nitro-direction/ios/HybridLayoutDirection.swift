@@ -54,14 +54,18 @@ class HybridLayoutDirection: HybridLayoutDirectionSpec {
     i18n.forceRTL(isRTL)
     i18n.swapLeftAndRight(true)
 
-    let promise = Promise<Bool>.resolved(isRTL)
+    let promise = Promise<Bool>()
 
     // All UIKit + surface mutation MUST happen on the main UI thread.
     DispatchQueue.main.async { [weak self] in
-      guard let self = self else { return }
+      guard let self = self else {
+        promise.resolve(isRTL)
+        return
+      }
       self.applyFlip(isRTL: isRTL)
       // Fire after the visual flip has landed on the main thread.
       self.onDirectionChanged?(isRTL)
+      promise.resolve(isRTL)
     }
 
     return promise

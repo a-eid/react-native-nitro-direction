@@ -18,9 +18,20 @@ describe('setDirection', () => {
   })
 
   it("calls the native setRTL with false for 'ltr'", async () => {
+    // set to rtl first so the 'ltr' call isn't an early-return no-op
+    await setDirection('rtl')
+    expect(__lastSetRTL()).toBe(true)
+
     await setDirection('ltr')
     expect(__lastSetRTL()).toBe(false)
     expect(I18nManager.isRTL).toBe(false)
+  })
+
+  it('early-returns when direction is unchanged', async () => {
+    // already ltr from reset — calling ltr again should no-op
+    expect(__lastSetRTL()).toBe(null)
+    await setDirection('ltr')
+    expect(__lastSetRTL()).toBe(null)
   })
 
   it('resolves to the applied direction', async () => {

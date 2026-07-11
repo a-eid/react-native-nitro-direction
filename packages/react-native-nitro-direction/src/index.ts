@@ -2,6 +2,15 @@ import { I18nManager } from 'react-native'
 
 import { layoutDirection } from './specs/LayoutDirection.nitro'
 
+const _listeners = new Set<(direction: 'ltr' | 'rtl') => void>()
+
+layoutDirection.onDirectionChanged = (isRTL: boolean) => {
+  const direction = isRTL ? 'rtl' : 'ltr'
+  for (const listener of _listeners) {
+    listener(direction)
+  }
+}
+
 /**
  * Get the current layout direction.
  *
@@ -29,6 +38,7 @@ export function getDirection(): 'ltr' | 'rtl' {
  *   has landed.
  */
 export async function setDirection(direction: 'ltr' | 'rtl'): Promise<'ltr' | 'rtl'> {
+  if (getDirection() === direction) return direction
   const isRTL = direction === 'rtl'
   if (I18nManager.isRTL !== isRTL) {
     I18nManager.allowRTL(true)
@@ -42,6 +52,8 @@ export async function setDirection(direction: 'ltr' | 'rtl'): Promise<'ltr' | 'r
  * Subscribe to native direction changes. Fires **after** the visual flip has
  * landed on the main/UI thread.
  *
+ * Supports multiple independent subscribers — each gets its own cleanup.
+ *
  * @param callback Called with the new direction (`'ltr'` or `'rtl'`) whenever
  *   the layout direction changes.
  * @returns A cleanup function that removes the listener.
@@ -49,10 +61,8 @@ export async function setDirection(direction: 'ltr' | 'rtl'): Promise<'ltr' | 'r
 export function onDirectionChanged(
   callback: (direction: 'ltr' | 'rtl') => void,
 ): () => void {
-  layoutDirection.onDirectionChanged = (isRTL: boolean) => {
-    callback(isRTL ? 'rtl' : 'ltr')
-  }
+  _listeners.add(callback)
   return () => {
-    layoutDirection.onDirectionChanged = undefined
+    _listeners.delete(callback)
   }
 }
