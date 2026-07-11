@@ -1,40 +1,34 @@
 # react-native-nitro-direction — example
 
-A minimal React Native (bare CLI) app that exercises
+An [Expo SDK 57](https://expo.dev) app that exercises
 [`react-native-nitro-direction`](../packages/react-native-nitro-direction)
 flipping the **whole UI between LTR and RTL at runtime** — no restart, no
 reload, no remount.
 
-It is a **stability torture-test**, not a showcase. One screen, every surface
+It's a **stability torture-test**, not a showcase. One screen, every surface
 that has historically broken on an RTL flip:
 
 1. **TextInput** — cursor position, selection, placeholder alignment.
 2. **FlatList (horizontal)** — start/end anchoring.
 3. **FlatList (inverted + sticky header)** — the three known-bad modes.
 4. **Modal** — flip *while open*, and open *after* a flip.
-5. **setRTL** — direct direction flip test.
+5. **setDirection** — direct direction flip test.
 
 Plus a live `scroll offset` readout to confirm a `ScrollView` keeps its position
 across the flip.
 
 ## Run it
 
-Because this is native code (Nitro module), it needs a full native build — Metro
-reload is not enough.
+This is a native app (Nitro module) — needs a development build, not Expo Go.
 
 ```sh
 # from the repo root
-bun install                      # or yarn / npm — installs the workspace
-
 cd example
-bun install                      # example's own deps
+npm install
 
-# iOS
-cd ios && pod install && cd ..   # autolinks the Nitro module
-npx react-native run-ios
-
-# Android
-npx react-native run-android
+# generate native projects and run
+npx expo prebuild
+npx expo run:ios     # or: npx expo run:android
 ```
 
 > The example resolves the library by workspace symlink

@@ -19,7 +19,7 @@ DerivedData
 *.ipa
 *.xcuserstate
 
-# Android/IJ
+# Android
 .classpath
 .cxx
 .gradle
@@ -28,6 +28,14 @@ DerivedData
 .settings
 local.properties
 android.iml
+
+# Expo
+.expo/
+dist/
+
+# Native
+ios/
+android/
 
 # Cocoapods
 ios/Pods/

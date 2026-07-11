@@ -2,24 +2,26 @@
   "name": "react-native-nitro-direction-example",
   "version": "0.1.0",
   "private": true,
-  "main": "index.js",
+  "main": "expo-router/entry",
   "scripts": {
-    "start": "react-native start",
-    "ios": "react-native run-ios",
-    "android": "react-native run-android",
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "pods": "cd ios && pod install && cd .."
   },
   "dependencies": {
+    "expo": "^57.0.0",
+    "expo-dev-client": "~6.0.0",
+    "expo-router": "~5.0.0",
     "react": "19.2.3",
     "react-native": "0.86.0",
     "react-native-nitro-modules": "0.36.1",
-    "react-native-nitro-direction": "link:../packages/react-native-nitro-direction"
+    "react-native-nitro-direction": "link:../packages/react-native-nitro-direction",
+    "react-native-safe-area-context": "5.6.0",
+    "react-native-screens": "~4.14.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@react-native/babel-preset": "0.86.0",
-    "@react-native/metro-config": "0.86.0",
-    "@react-native/typescript-config": "0.86.0",
+    "@types/react": "^19.2.15",
     "typescript": "^5.8.3"
   }
 }

@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "NitroDirectionExample",
+    "slug": "nitro-direction-example",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "scheme": "nitro-direction-example",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.margelo.nitro.layoutdirection.example"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0d10"
+      },
+      "package": "com.margelo.nitro.layoutdirection.example"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
