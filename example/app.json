@@ -8,9 +8,17 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "scheme": "nitro-direction-example",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0d10"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.margelo.nitro.layoutdirection.example"
+      "bundleIdentifier": "com.margelo.nitro.layoutdirection.example",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,6 +28,12 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "69725f6a-abb0-4a6b-966a-6eaeeeb4897c"
+      }
+    }
   }
 }
