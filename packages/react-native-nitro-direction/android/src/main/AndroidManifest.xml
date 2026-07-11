@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Required for I18nUtil.isRTL(context) to ever return true. Without it the
+      Android RTL machinery short-circuits to false regardless of the persisted
+      flags, and the native flip is a no-op. Merged into the host app.
+    -->
+    <application android:supportsRtl="true" />
+
+</manifest>
