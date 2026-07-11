@@ -81,6 +81,12 @@ const cleanup = onDirectionChanged((direction) => {
 
 `setDirection` also keeps `I18nManager.isRTL` in sync on the JS side.
 
+> **The direction persists across app restarts — no extra storage needed.**
+> `setDirection` writes to React Native's own i18n flags (`RCTI18nUtil` on iOS,
+> `I18nUtil` SharedPreferences on Android), which RN reads on every cold start.
+> Kill the app after `setDirection('rtl')` and it boots straight into RTL. See
+> [Persistence](#persistence).
+
 ---
 
 ## API
@@ -95,16 +101,97 @@ const cleanup = onDirectionChanged((direction) => {
 
 ## Integration guide
 
-### Cold start — set direction before the first paint
+### Best practices at a glance
 
-Do this before rendering your navigator so the stored language is already
-correct on launch:
+- ✅ Seed initial React state from `getDirection()`, not `I18nManager.isRTL`.
+- ✅ Call `setDirection` **before** `i18n.changeLanguage` (see
+  [Language switch](#language-switch--direction-first-then-strings)).
+- ✅ Wrap your navigator in `LocaleDirContext` to drive `react-native-screens`'
+  push/pop animation and swipe gesture (see
+  [React Navigation / Expo Router](#react-navigation--expo-router)).
+- ❌ Don't persist direction yourself — it's already native (see
+  [Persistence](#persistence)).
+- ❌ Don't call `setDirection` every boot just to restore — the native flags
+  survive restarts on their own.
+- ❌ Don't hardcode `textAlign: 'right'` under RTL — use `'left'` and let the
+  flip swap it (see [Text alignment](#text-alignment)).
+
+### Cold start — seed state, don't re-flip
+
+On launch the native hierarchy is **already** in the last-set direction
+(that's the whole point of persistence). You only need to sync it into React
+state so your components render correctly:
 
 ```tsx
-// app root, before <NavigationContainer> or the first <Stack>
-const direction = getStoredDirection() // your logic — persisted pref, device locale, etc.
-await setDirection(direction)
+// app root — read the persisted direction synchronously to seed state
+const [direction, setDir] = useState(getDirection())
+
+useEffect(() => onDirectionChanged(setDir), [])
 ```
+
+`getDirection()` reads the native flag synchronously, so the very first render
+is correct — no LTR flash, no `await` before first paint.
+
+The only time you call `setDirection` at boot is when you're choosing the
+direction from an **external** source the native flags don't know about — a
+freshly fetched user preference, or device-locale detection on first launch
+(see [First launch](#first-launch--device-locale-detection)).
+
+### Persistence
+
+`setDirection` writes to **React Native's own** i18n stores — `RCTI18nUtil`
+(`NSUserDefaults`) on iOS and `I18nUtil` (SharedPreferences) on Android.
+These are the exact same flags RN reads during startup, so:
+
+- The direction **survives app kills and device reboots**. No AsyncStorage, no
+  MMKV, no `useState`+`useEffect` restore dance.
+- The native chrome (header, tab bar, swipe gesture) is correct from frame one
+  — the flags are read *before* JS loads.
+- `getDirection()` is always coherent with what the native side actually
+  rendered.
+
+**Don't add your own storage layer.** Two copies of the truth drift: if your
+store says RTL but RN's flag says LTR (e.g. after an RN upgrade changes the
+storage key, or a consumer clears one but not the other), you reintroduce the
+exact LTR flash this package exists to kill.
+
+> **No "follow system" reset.** Once set, the direction sticks — this matches
+> iOS's `semanticContentAttribute` override model. To follow the device locale,
+> detect it yourself and call `setDirection(systemDirection)` when it changes
+> (see [First launch](#first-launch--device-locale-detection)).
+
+### First launch / device locale detection
+
+On a true first launch there's no persisted direction yet. Detect it from the
+device locale and set it once — it then persists for every subsequent launch:
+
+```ts
+import { setDirection } from 'react-native-nitro-direction'
+import { getLocales } from 'expo-localization'         // or react-native-localize
+import { AppState } from 'react-native'
+
+const RTL_RE = /^(ar|he|fa|ur|ku|ps|sd|ug|yi)/i
+
+function isRTL(locale: string): boolean {
+  return RTL_RE.test(locale)
+}
+
+async function syncDirectionFromLocale() {
+  const [{ languageCode }] = getLocales()
+  await setDirection(isRTL(languageCode) ? 'rtl' : 'ltr')
+}
+
+// run once on first launch (your own "has run before" flag), and again if the
+// user changes their device language while the app is backgrounded:
+syncDirectionFromLocale()
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') syncDirectionFromLocale()
+})
+```
+
+Locale detection is intentionally **not** part of this package — different apps
+have different RTL-locale sets, different override rules (user-pick vs.
+follow-system), and different localization stacks. Keep that logic in your app.
 
 ### Language switch — direction first, then strings
 
@@ -138,24 +225,60 @@ const styles = StyleSheet.create({
 
 ### React Navigation / Expo Router
 
-The native-stack push/pop animation and swipe-back gesture read their direction
-from `LocaleDirContext`, which defaults to the cached startup value and never
-re-reads at runtime. Override it:
+Wrap your navigator in `LocaleDirContext` and feed it your direction state.
+This is the **single source of truth** — `react-native-screens` reads it via
+`useLocale()` → `useHeaderConfigProps` → `ScreenStackHeaderConfig`, which sets
+the native `semanticContentAttribute` that controls the push/pop animation
+direction and swipe-back gesture edge.
+
+**Isolate the provider in its own component** that receives `children`. When
+direction changes, only the context provider and its consumers re-render — the
+`children` prop is a stable element reference, so React bails out of re-rendering
+the navigator and its screens.
 
 ```tsx
-import { LocaleDirContext } from '@react-navigation/native'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Stack } from 'expo-router'
+import { getDirection, onDirectionChanged } from 'react-native-nitro-direction'
+import { LocaleDirContext } from 'expo-router/react-navigation'
 
-function RootLayout() {
-  // your own state that stays in sync with direction changes
-  const direction = /* ... */
+// Isolated so direction changes don't re-render the navigator tree —
+// only LocaleDirContext consumers (screens calling useLocale()) update.
+function DirectionProvider({ children }: { children: ReactNode }) {
+  const [direction, setDirection] = useState(getDirection)
+  useEffect(() => onDirectionChanged(setDirection), [])
 
   return (
     <LocaleDirContext.Provider value={direction}>
-      <Stack />
+      {children}
     </LocaleDirContext.Provider>
   )
 }
+
+export default function RootLayout() {
+  return (
+    <DirectionProvider>
+      <Stack>{/* screens */}</Stack>
+    </DirectionProvider>
+  )
+}
 ```
+
+This gives you:
+
+- ✅ **Push/pop animation** slides in the correct direction
+- ✅ **Swipe-back gesture** rebinds to the mirrored edge
+- ✅ **Survives reloads** — RNS re-applies from the context on mount
+- ✅ **Minimal re-renders** — only `LocaleDirContext` consumers update
+- ✅ **React content** mirrors (text alignment, flex, layout)
+
+> ⚠️ **Known limitation — large title & back chevron.** The iOS navigation bar's
+> large title and back chevron do not reliably re-render at runtime when
+> direction flips. `react-native-screens` manages its own `UINavigationController`
+> instances, and UIKit's private large-title view doesn't respond to
+> `setNeedsLayout`. The animation, gesture, and content all flip correctly —
+> only the nav bar chrome is affected. If you need this,
+> [track the issue](https://github.com/a-eid/react-native-nitro-direction/issues).
 
 ### Subscribe to direction changes
 
@@ -227,7 +350,8 @@ doesn't.
 | Only flips after restart | You're on New Architecture? Confirm `newArchEnabled`. Are you `await`-ing `setDirection()`? |
 | Text doesn't right-align | Add `textAlign: 'left'` to that style. Unset alignment never flips. |
 | Text alignment is stale after language switch | Call `setDirection` **before** `i18n.changeLanguage`. |
-| Push animation / swipe-back stuck in old direction | Override `LocaleDirContext` (see React Navigation section). |
+| Push animation / swipe-back stuck in old direction | Wrap your navigator in `LocaleDirContext` and feed it your direction state. See [React Navigation / Expo Router](#react-navigation--expo-router). |
+| Large title or back chevron don't flip | **Known limitation** — UIKit's large-title view doesn't re-render on `setNeedsLayout`. Animation + gesture still work via the `direction` prop. See the note in the [React Navigation section](#react-navigation--expo-router). |
 | `WARNING: RCTFabricSurface does not respond to minimumSize` | RN's surface API changed — the content won't re-layout until restart. [File an issue](https://github.com/a-eid/react-native-nitro-direction/issues) with your RN version. |
 
 ## License
