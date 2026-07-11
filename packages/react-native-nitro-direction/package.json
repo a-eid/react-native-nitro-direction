@@ -33,7 +33,7 @@
     "clean": "rm -rf android/build node_modules/**/android/build lib",
     "test": "jest",
     "typescript": "tsc",
-    "specs": "tsc --noEmit false && nitrogen --logLevel=\"debug\"",
+    "specs": "tsc --noEmit && nitrogen --logLevel=\"debug\"",
     "prepublishOnly": "tsc && nitrogen --logLevel=\"debug\""
   },
   "keywords": [

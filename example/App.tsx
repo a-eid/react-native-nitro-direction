@@ -33,7 +33,6 @@ export default function App() {
   const [isRTL, setIsRTL] = useState(getDirection() === 'rtl')
   const [modalOpen, setModalOpen] = useState(false)
   const [text, setText] = useState('Type here — cursor should stay sane on flip')
-  const [switchOn, setSwitchOn] = useState(true)
   const [invertedList, setInvertedList] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
   const [offset, setOffset] = useState(0)
