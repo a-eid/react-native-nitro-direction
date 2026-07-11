@@ -1,0 +1,25 @@
+{
+  "name": "react-native-nitro-direction-example",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "ios": "react-native run-ios",
+    "android": "react-native run-android",
+    "pods": "cd ios && pod install && cd .."
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-nitro-modules": "0.36.1",
+    "react-native-nitro-direction": "link:../packages/react-native-nitro-direction"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@react-native/babel-preset": "0.86.0",
+    "@react-native/metro-config": "0.86.0",
+    "@react-native/typescript-config": "0.86.0",
+    "typescript": "^5.8.3"
+  }
+}
