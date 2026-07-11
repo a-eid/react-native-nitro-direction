@@ -23,10 +23,9 @@ This is a native app (Nitro module) — needs a development build, not Expo Go.
 
 ```sh
 # from the repo root
-cd example
-npm install
+bun install
 
-# generate native projects and run
+cd example
 npx expo prebuild
 npx expo run:ios     # or: npx expo run:android
 ```

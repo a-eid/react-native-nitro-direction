@@ -42,7 +42,7 @@ every live Fabric surface, then mirrors the native chrome alongside it.
 ## Installation
 
 ```sh
-npm install react-native-nitro-direction react-native-nitro-modules
+bun add react-native-nitro-direction react-native-nitro-modules
 ```
 
 Rebuild the native app — the hybrid object must compile into the binary:
